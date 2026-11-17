@@ -1,0 +1,2 @@
+# pikitashka-
+Geologning dala kundaligi
