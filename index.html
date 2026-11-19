@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pikitashka</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2C5E3F">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pikitashka">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="Geologning dala daftari: nuqtalar, GPS, namunalar, xaritalar. Internetsiz ishlaydi.">
+<style>
+:root{
+  --bg:#F3F0E8; --card:#FFFFFF; --ink:#1B1E24; --muted:#5E6371; --line:#E0D8C9; --soft:#FAF8F3;
+  --accent:#2C5E3F; --accent-d:#21482F; --accent-t:#E2EEE5;
+  --copper:#A4622A; --copper-t:#F6EADF; --warn:#B4541E; --warn-t:#FBE9DD; --err:#A13D2A;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45;-webkit-font-smoothing:antialiased}
+main{max-width:1080px;margin:0 auto;padding:20px 16px 64px}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none !important}
+
+/* header */
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.logo{width:46px;height:46px;flex-shrink:0}
+.brand h1{margin:0;font-size:28px;letter-spacing:-.01em}
+.brand p{margin:0;color:var(--muted);font-size:14.5px}
+.stats{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 12px;text-align:center;min-width:86px}
+.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:var(--muted)}
+.stat.w b{color:var(--warn)}
+
+/* toolbar */
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.btn{border:none;border-radius:11px;padding:10px 16px;font-weight:600;cursor:pointer;background:#E9E3D7;white-space:nowrap}
+.btn:hover{background:#DFD7C7}
+.btn-p{background:var(--accent);color:#fff}
+.btn-p:hover{background:var(--accent-d)}
+.btn-sm{padding:6px 11px;font-size:14px;border-radius:9px}
+.btn-d{background:#F5DED7;color:var(--err)}
+.btn-d:hover{background:#EFCFC5}
+.btn:disabled{opacity:.5;cursor:default}
+.search{flex:1 1 220px;min-width:160px;padding:10px 12px;border:1.5px solid var(--line);border-radius:11px;background:var(--card)}
+.seg{display:inline-flex;background:#E6E0D3;border-radius:11px;padding:3px}
+.seg button{border:none;background:transparent;padding:7px 12px;border-radius:9px;cursor:pointer;font-weight:600;color:var(--muted);font-size:14.5px}
+.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.chip{border:1.5px solid var(--line);background:var(--card);border-radius:20px;padding:5px 12px;cursor:pointer;font-size:14px;font-weight:600;color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-t);color:var(--accent-d)}
+.status{font-size:13.5px;color:var(--muted);margin:-4px 0 12px;min-height:18px}
+.status.err{color:var(--err)}
+.banner{background:var(--warn-t);border:1px solid #EFC9AE;color:#6E3510;border-radius:12px;padding:10px 14px;font-size:14px;margin-bottom:12px}
+
+/* list */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.pt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;width:100%;display:flex;flex-direction:column;gap:6px;transition:border-color .12s, box-shadow .12s}
+.pt:hover{border-color:#C9BDA6;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.pt-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.pt-name{font-size:19px;font-weight:700}
+.flag{background:var(--warn-t);color:var(--warn);font-size:12.5px;font-weight:700;padding:2px 9px;border-radius:12px;white-space:nowrap}
+.pt-coord{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13.5px;color:#3A3E47}
+.pt-meta{font-size:14px;color:var(--muted)}
+.pt-rock{font-weight:600}
+.pt-tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{background:var(--copper-t);color:#6E3E14;font-size:12.5px;padding:2px 8px;border-radius:10px}
+.empty{background:var(--card);border:1px dashed #CBBFA9;border-radius:14px;padding:30px;text-align:center;color:var(--muted)}
+
+/* map */
+.maptools{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.maptools .sp{flex:1}
+.maptools select{padding:7px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);font-weight:600;max-width:240px}
+.btn[aria-pressed="true"]{background:var(--accent);color:#fff}
+.mapwrap{position:relative;background:#FAF8F3;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+#map,#gsvg{width:100%;height:64vh;min-height:360px;display:block;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+#map.pick,#gsvg{cursor:crosshair}
+#map .p{cursor:pointer}
+.mz{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:4px}
+.mz button{width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.95);font-size:20px;font-weight:700;cursor:pointer;line-height:1}
+.north{position:absolute;left:12px;top:10px;width:34px;text-align:center;font-weight:800;font-size:13px;color:#1B1E24;background:rgba(255,255,255,.9);border-radius:10px;padding:4px 0;line-height:1.1}
+.north svg{display:block;margin:0 auto}
+.scale{position:absolute;left:12px;bottom:10px;background:rgba(255,255,255,.92);border-radius:8px;padding:4px 8px;font-size:12.5px;display:flex;align-items:center;gap:8px}
+.scale i{display:block;height:6px;border:2px solid #1B1E24;border-top:none}
+.cursor{position:absolute;right:10px;bottom:10px;background:rgba(255,255,255,.92);border-radius:8px;padding:4px 8px;font-size:12.5px;font-family:ui-monospace,Menlo,Consolas,monospace}
+.cursor:empty{display:none}
+.mapmsg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--muted);pointer-events:none}
+.maphint{font-size:13px;color:var(--muted);margin:6px 4px 0}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.links a{font-size:13.5px;font-weight:600;color:var(--accent-d);background:var(--accent-t);padding:5px 10px;border-radius:9px;text-decoration:none}
+.modal.wide{max-width:980px}
+.gcp-pending{background:var(--copper-t);border:1px solid #E8CDB2;border-radius:12px;padding:10px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.gcp-pending .inp{flex:1 1 220px}
+.gcp-pending select.inp{flex:0 1 200px}
+table.gcp{width:100%;border-collapse:collapse;font-size:14px}
+table.gcp td,table.gcp th{padding:6px;border-bottom:1px solid var(--line);text-align:left}
+table.gcp th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+table.gcp button{border:none;background:#F1ECE2;border-radius:8px;width:30px;height:30px;cursor:pointer}
+.q-ok{color:var(--accent-d);font-weight:600}
+.q-bad{color:var(--warn);font-weight:600}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(27,30,36,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow:auto;z-index:10}
+.modal{background:var(--bg);border-radius:18px;width:100%;max-width:760px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.m-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
+.m-head h2{margin:0;font-size:20px}
+.x{border:none;background:transparent;font-size:26px;line-height:1;cursor:pointer;color:var(--muted);padding:4px 8px}
+.m-body{padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.sec{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.sec h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.row{display:grid;gap:10px}
+.r3{grid-template-columns:2fr 1.2fr 1fr}
+.r2{grid-template-columns:2fr 1fr}
+.f{display:flex;flex-direction:column;gap:4px;font-size:13.5px;font-weight:600;color:var(--muted)}
+.inp{width:100%;padding:9px 11px;border:1.5px solid var(--line);border-radius:10px;background:var(--soft);font-size:16px;color:var(--ink);font-weight:400}
+.inp:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(44,94,63,.15)}
+textarea.inp{min-height:150px;resize:vertical;line-height:1.5}
+.parsed{font-size:13px;margin-top:4px;color:var(--muted)}
+.parsed.ok{color:var(--accent-d)}
+.parsed.bad{color:var(--err)}
+.el{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px}
+.el .rm{border:none;background:#F1ECE2;border-radius:9px;width:38px;height:40px;cursor:pointer;font-size:18px;color:var(--muted)}
+.photos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.ph{position:relative;width:92px;height:92px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:#EEE}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+.ph button{position:absolute;top:4px;right:4px;width:24px;height:24px;border:none;border-radius:12px;background:rgba(27,30,36,.75);color:#fff;cursor:pointer;line-height:24px;padding:0}
+.chk{display:flex;align-items:center;gap:8px;font-weight:600}
+.chk input{width:18px;height:18px}
+.m-foot{display:flex;gap:8px;flex-wrap:wrap;padding:14px 20px;border-top:1px solid var(--line);align-items:center}
+.m-foot .sp{flex:1}
+.ai-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.ai-row select{padding:6px 8px;border-radius:9px;border:1.5px solid var(--line);background:var(--soft)}
+.spin{display:inline-block;width:14px;height:14px;border:2.5px solid #CFC6B5;border-top-color:var(--accent);border-radius:50%;animation:sp .9s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.note{font-size:13px;color:var(--muted)}
+.foot{margin-top:28px;text-align:center;font-size:12.5px;color:var(--muted)}
+@media (max-width:640px){
+  .r3,.r2{grid-template-columns:1fr}
+  .el{grid-template-columns:1fr 1fr}
+  .el .rm{grid-column:2;justify-self:end}
+  .stats{margin-left:0;width:100%}
+  .stat{flex:1}
+  .overlay{padding:0}
+  .modal{border-radius:0;min-height:100%}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <svg class="logo" viewBox="0 0 46 46" aria-hidden="true">
+      <rect width="46" height="46" rx="12" fill="#2C5E3F"/>
+      <rect x="11" y="9" width="22" height="28" rx="3" fill="#F3F0E8"/>
+      <path d="M15 16h14M15 21h14M15 26h9" stroke="#2C5E3F" stroke-width="2" stroke-linecap="round"/>
+      <path d="M33 22 L39 34 L27 34 Z" fill="#D99A5B" stroke="#2C5E3F" stroke-width="1.5" stroke-linejoin="round"/>
+    </svg>
+    <div class="brand">
+      <h1>Pikitashka</h1>
+      <p>Geologning dala daftari · internetsiz ishlaydi</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sPoints">0</b><span>nuqta</span></div>
+      <div class="stat"><b id="sSamples">0</b><span>namuna</span></div>
+      <div class="stat w"><b id="sFlags">0</b><span>tekshirish</span></div>
+    </div>
+  </header>
+
+  <div class="banner hidden" id="installBanner"><b>📲 Pikitashka’ni telefoningizga o‘rnating</b> — bosh ekrandan ilova kabi ochiladi va internetsiz ishlaydi.
+  <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn btn-p btn-sm hidden" id="installBtn">O‘rnatish</button><span id="installHint"></span><button class="btn btn-sm" id="installClose">Keyinroq</button></div></div>
+<div class="banner" id="localBanner">Ma’lumotlaringiz faqat shu telefonda saqlanadi, hech qayerga yuborilmaydi. Har kuni oxirida <b>💾 Zaxira</b> tugmasini bosib, faylni saqlab qo‘ying.</div>
+
+  <div class="bar">
+    <button class="btn btn-p" id="addBtn">+ Yangi nuqta</button>
+    <button class="btn" id="photoPointCam" title="Kamerani ochadi: suratga oling, koordinata fotodan olinadi">📷 Kamera</button>
+    <button class="btn" id="photoPointBtn" title="Galereyadagi fotodan koordinata, balandlik va sanani oladi">🖼 Galereyadan</button>
+    <input type="file" id="photoPointInput" accept="image/*" class="hidden">
+    <input type="file" id="photoPointCamInput" accept="image/*" capture="environment" class="hidden">
+    <input class="search" id="search" type="search" placeholder="Qidirish: nuqta, jins, namuna…" aria-label="Qidirish">
+    <div class="seg" role="group" aria-label="Ko‘rinish">
+      <button id="vList" aria-pressed="true">☰ Ro‘yxat</button>
+      <button id="vMap" aria-pressed="false">◎ Sxema</button>
+    </div>
+    <div class="seg" role="group" aria-label="Koordinata formati">
+      <button id="fDM" aria-pressed="true">° ′</button>
+      <button id="fDD" aria-pressed="false">0.000°</button>
+    </div>
+    <button class="btn" id="expCsv">⬇ Excel (CSV)</button>
+    <button class="btn" id="expGis">⬇ GIS (KML, GPX)</button>
+    <button class="btn" id="backupBtn">💾 Zaxira</button>
+    <button class="btn" id="importBtn">📂 Zaxirani yuklash</button>
+    <input type="file" id="importInput" accept=".json,application/json" class="hidden">
+  </div>
+  <div class="chips" id="groups"></div>
+  <div class="status" id="status">Yuklanmoqda…</div>
+
+  <section id="listView"><div class="grid" id="grid"></div></section>
+  <section id="mapView" class="hidden">
+    <div class="maptools">
+      <select id="bmSel" aria-label="Asos xarita"></select>
+      <button class="btn btn-sm" id="bmAdd">🗺 Xarita qo‘shish</button>
+      <button class="btn btn-sm hidden" id="bmEdit">Bog‘lashni tahrirlash</button>
+      <span class="sp"></span>
+      <button class="btn btn-sm" id="pickBtn" aria-pressed="false">📍 Xaritadan nuqta qo‘yish</button>
+    </div>
+    <div class="mapwrap">
+      <svg id="map" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Nuqtalar xaritasi"><g id="mBase"></g><g id="mOv"></g></svg>
+      <div class="mapmsg hidden" id="mapMsg"></div>
+      <div class="north" id="north" title="Shimol"><svg width="16" height="22" viewBox="0 0 16 22"><path d="M8 0 L15 20 L8 15 L1 20 Z" fill="#1B1E24"/></svg>N</div>
+      <div class="mz"><button id="zIn" aria-label="Yaqinlashtirish">+</button><button id="zOut" aria-label="Uzoqlashtirish">−</button><button id="zFit" aria-label="Hammasini ko‘rsatish" style="font-size:16px">⤢</button></div>
+      <div class="scale"><i id="scaleBar"></i><span id="scaleTxt"></span></div>
+      <div class="cursor" id="cursor"></div>
+    </div>
+    <p class="maphint" id="mapHint">Sichqoncha g‘ildiragi yoki «+ −» bilan kattalashtiring, sudrab suring. Nuqtani bossangiz, u ochiladi. O‘z geologik yoki topografik xaritangizni «🗺 Xarita qo‘shish» orqali ulang.</p>
+  </section>
+
+  <p class="foot">Pikitashka · koordinatalar WGS-84 · Excel uchun CSV «;» bilan ajratilgan</p>
+</main>
+
+<!-- editor -->
+<div class="overlay hidden" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="m-head"><h2 id="mTitle">Nuqta</h2><button class="x" id="mClose" aria-label="Yopish">×</button></div>
+    <div class="m-body">
+      <div class="sec">
+        <h3>Asosiy</h3>
+        <div class="row r3">
+          <label class="f">Nuqta nomi *<input class="inp" id="eName" placeholder="1024-C"></label>
+          <label class="f">Sana<input class="inp" id="eDate" type="date"></label>
+          <label class="f">Marshrut<input class="inp" id="eRoute" placeholder="№ 12"></label>
+        </div>
+      </div>
+      <div class="sec">
+        <h3>Joylashuv</h3>
+        <div class="row r2">
+          <label class="f">Koordinata (WGS-84)<input class="inp" id="eCoord" placeholder="N 39° 23.158′, E 066° 27.275′  yoki  39.38597, 66.45458"></label>
+          <label class="f">Balandlik, m<input class="inp" id="eAlt" inputmode="decimal" placeholder="masalan, 1246"></label>
+        </div>
+        <div class="parsed" id="eParsed"></div>
+        <div class="links" id="eLinks"></div>
+        <div class="ai-row">
+          <button class="btn btn-sm btn-p" id="eGeoBtn">📍 Mening joylashuvim</button>
+          <button class="btn btn-sm" id="eGpsCam">📷 Kamera</button>
+          <button class="btn btn-sm" id="eGpsBtn">🖼 Galereyadan GPS</button>
+          <input type="file" id="eGpsInput" accept="image/*" class="hidden">
+          <input type="file" id="eGpsCamInput" accept="image/*" capture="environment" class="hidden">
+          <span class="note" id="eGpsMsg"></span>
+        </div>
+        <div class="ai-row" style="margin-top:4px">
+          <span class="note" id="eGeoMsg"></span>
+        </div>
+      </div>
+      <div class="sec">
+        <h3>Geologiya</h3>
+        <label class="f" style="margin-bottom:10px">Jins nomi<input class="inp" id="eRock" placeholder="masalan: kvarsli diorit, ohaktosh, skarn"></label>
+        <div class="f" style="margin-bottom:6px">Yotish elementlari</div>
+        <div id="eEls"></div>
+        <button class="btn btn-sm" id="eAddEl">+ Element qo‘shish</button>
+      </div>
+      <div class="sec">
+        <h3>Tavsif (apisaniya)</h3>
+        <textarea class="inp" id="eDesc" placeholder="Nuqta bog‘lanishi, jinslar, kontaktlar, o‘zgarishlar, ma’danlashuv…"></textarea>
+        <div class="ai-row hidden" id="aiRow">
+          <button class="btn btn-sm" id="aiBtn">✨ AI bilan apisaniya yozish</button>
+          <select id="aiLang" aria-label="Til"><option value="uz">O‘zbekcha</option><option value="ru">Русский</option></select>
+          <button class="btn btn-sm hidden" id="aiStop">To‘xtatish</button>
+          <span class="note" id="aiStatus"></span>
+        </div>
+      </div>
+      <div class="sec">
+        <h3>Namunalar va foto</h3>
+        <label class="f" style="margin-bottom:10px">Namunalar (vergul bilan)<input class="inp" id="eSamples" placeholder="1024-C-sh, 1024-C-x1"></label>
+        <div class="photos" id="ePhotos"></div>
+        <div id="photoCtl" class="hidden">
+          <button class="btn btn-sm" id="ePhotoBtn">📷 Foto qo‘shish</button>
+          <input type="file" id="ePhotoInput" accept="image/*" multiple class="hidden">
+          <span class="note" id="photoStatus"></span>
+        </div>
+        <p class="note hidden" id="photoNo">Foto qo‘shish bu ko‘rinishda mavjud emas.</p>
+      </div>
+      <div class="sec">
+        <label class="chk"><input type="checkbox" id="eFlag"> Tekshirish kerak</label>
+        <input class="inp" id="eFlagNote" placeholder="Nimani tekshirish kerak?" style="margin-top:8px">
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-d" id="mDelete">O‘chirish</button>
+      <span class="sp"></span>
+      <span class="note" id="mMsg"></span>
+      <button class="btn" id="mCancel">Bekor qilish</button>
+      <button class="btn btn-p" id="mSave">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- georeference -->
+<div class="overlay hidden" id="gOverlay">
+  <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="gTitle">
+    <div class="m-head"><h2 id="gTitle">Xaritani koordinataga bog‘lash</h2><button class="x" id="gClose" aria-label="Yopish">×</button></div>
+    <div class="m-body">
+      <div class="sec">
+        <div class="row r2">
+          <label class="f">Xarita nomi<input class="inp" id="gName" placeholder="masalan: Geologik xarita 1:25 000, 1024-uchastka"></label>
+          <div class="f">Rasm fayli
+            <div><button class="btn btn-sm" id="gFileBtn">📁 Rasm tanlash</button> <span class="note" id="gFileStatus"></span></div>
+            <input type="file" id="gFile" accept="image/*" class="hidden">
+          </div>
+        </div>
+        <p class="note" style="margin:10px 0 0">Geologik xarita, topografik xarita yoki sun’iy yo‘ldosh rasmining skrinshoti bo‘lishi mumkin. Keyin xaritada <b>koordinatasi ma’lum joyni bosing</b> (masalan, Pikitashka’dagi nuqta, to‘r kesishmasi yoki cho‘qqi) va uning koordinatasini kiriting. Kamida 2 ta nuqta kerak, aniqlik uchun 3–4 ta, imkon qadar xaritaning turli burchaklaridan.</p>
+      </div>
+      <div class="mapwrap">
+        <svg id="gsvg" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Bog‘lanadigan xarita"><g id="gBase"></g><g id="gOv"></g></svg>
+        <div class="mapmsg" id="gMsg">Avval rasm tanlang</div>
+        <div class="mz"><button id="gzIn" aria-label="Yaqinlashtirish">+</button><button id="gzOut" aria-label="Uzoqlashtirish">−</button><button id="gzFit" aria-label="Butun xarita" style="font-size:16px">⤢</button></div>
+      </div>
+      <div class="gcp-pending hidden" id="gPending">
+        <b id="gPendTitle">Tanlangan joy</b>
+        <select class="inp" id="gPtSel" aria-label="Pikitashka nuqtasidan tanlash"></select>
+        <input class="inp" id="gCoord" placeholder="yoki koordinata: N 39° 23.158′, E 066° 27.275′">
+        <button class="btn btn-sm btn-p" id="gAddGcp">Qo‘shish</button>
+        <button class="btn btn-sm" id="gCancelGcp">Bekor</button>
+      </div>
+      <div class="sec">
+        <h3>Tayanch nuqtalar</h3>
+        <table class="gcp"><thead><tr><th>#</th><th>Nuqta</th><th>Koordinata</th><th>Xatolik</th><th></th></tr></thead><tbody id="gTable"></tbody></table>
+        <p class="note" id="gQuality" style="margin:8px 0 0"></p>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-d hidden" id="gDelete">Xaritani o‘chirish</button>
+      <span class="sp"></span>
+      <span class="note" id="gMsg2"></span>
+      <button class="btn" id="gCancel">Bekor qilish</button>
+      <button class="btn btn-p" id="gSave" disabled>Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const EL_TYPES = ['Qatlamlanish','Darzlik','Kontakt','Tomir','Uzilma (yoriq)','Slanetslanish','Boshqa'];
+
+/* ---------------- state ---------------- */
+const S = { points: [], basemaps: [], bmId: '', pick: false, group: 'all', q: '', view: 'list', fmt: 'dm', edit: null, editId: null };
+try { S.bmId = localStorage.getItem('pikitashka.bm') || ''; } catch {}
+let db = null, coll = null, bmColl = null, assets = null, downloads = null, sample = null, mode = 'loading';
+
+/* ---------------- coordinates ---------------- */
+function parseCoord(str){
+  if (!str || !str.trim()) return null;
+  let s = str.toUpperCase().replace(/[СC](?=\s*\d)/g,'N').replace(/[ВB](?=\s*\d)/g,'E')
+    .replace(/[ЮЮ]/g,'S').replace(/[З]/g,'W').replace(/,/g,' ');
+  const tokens = s.match(/[NSEW]|-?\d+(?:\.\d+)?/g) || [];
+  const letters = tokens.filter(t => /^[NSEW]$/.test(t));
+  const nums = tokens.filter(t => !/^[NSEW]$/.test(t)).map(Number);
+  let lat, lon;
+  const dm = (d,m,sx=0) => Math.sign(d||1) * (Math.abs(d) + m/60 + sx/3600);
+  if (nums.length === 2){ [lat,lon] = nums; }
+  else if (nums.length === 4){ lat = dm(nums[0],nums[1]); lon = dm(nums[2],nums[3]); }
+  else if (nums.length === 6){ lat = dm(nums[0],nums[1],nums[2]); lon = dm(nums[3],nums[4],nums[5]); }
+  else return null;
+  if (letters.length && /[EW]/.test(letters[0])) [lat,lon] = [lon,lat];
+  if (letters.includes('S')) lat = -Math.abs(lat);
+  if (letters.includes('W')) lon = -Math.abs(lon);
+  if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return { lat: +lat.toFixed(6), lon: +lon.toFixed(6) };
+}
+function fmtDM(v, isLat){
+  const h = isLat ? (v < 0 ? 'S' : 'N') : (v < 0 ? 'W' : 'E');
+  const a = Math.abs(v), d = Math.floor(a); let m = (a - d) * 60;
+  let mm = m.toFixed(3), dd = d;
+  if (mm === '60.000'){ dd += 1; mm = '0.000'; }
+  const ds = String(dd).padStart(isLat ? 2 : 3, '0');
+  return `${h} ${ds}° ${mm.padStart(6,'0')}′`;
+}
+function coordText(p, fmt = S.fmt){
+  if (!hasCoord(p)) return 'koordinata yo‘q';
+  return fmt === 'dd' ? `${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}` : `${fmtDM(p.lat,true)}, ${fmtDM(p.lon,false)}`;
+}
+const hasCoord = p => typeof p.lat === 'number' && typeof p.lon === 'number';
+
+/* ---------------- helpers ---------------- */
+const groupOf = n => { const s = String(n||''); const i = s.indexOf('-'); return i > 0 ? s.slice(0,i) : s || '—'; };
+const natural = (a,b) => String(a.name||'').localeCompare(String(b.name||''), undefined, {numeric:true, sensitivity:'base'});
+const samplesOf = p => String(p.samples||'').split(/[,;]+/).map(s => s.trim()).filter(Boolean);
+const elText = e => `${e.type || 'Element'}: ${e.az ?? '?'}°∠${e.dip ?? '?'}°`;
+const todayStr = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+function setStatus(t, err=false){ $('status').textContent = t; $('status').classList.toggle('err', err); }
+
+function filtered(){
+  const q = S.q.trim().toLowerCase();
+  return S.points.filter(p => (S.group === 'all' || groupOf(p.name) === S.group) &&
+    (!q || [p.name,p.rock,p.description,p.samples,p.route,p.flagNote].some(v => String(v||'').toLowerCase().includes(q))))
+    .sort(natural);
+}
+
+/* ---------------- render ---------------- */
+function render(){
+  const pts = S.points;
+  $('sPoints').textContent = pts.length;
+  $('sSamples').textContent = pts.reduce((n,p) => n + samplesOf(p).length, 0);
+  $('sFlags').textContent = pts.filter(p => p.flag).length;
+
+  const groups = [...new Set(pts.map(p => groupOf(p.name)))].sort((a,b) => a.localeCompare(b, undefined, {numeric:true}));
+  if (S.group !== 'all' && !groups.includes(S.group)) S.group = 'all';
+  $('groups').innerHTML = [['all','Hammasi']].concat(groups.map(g => [g,g]))
+    .map(([v,l]) => `<button class="chip" data-g="${esc(v)}" aria-pressed="${S.group===v}">${esc(l)}${v==='all'?'':' · '+pts.filter(p=>groupOf(p.name)===v).length}</button>`).join('');
+  document.querySelectorAll('#groups .chip').forEach(b => b.onclick = () => { S.group = b.dataset.g; render(); });
+
+  const list = filtered();
+  if (S.view === 'list') renderList(list); else renderMap(list);
+}
+
+function renderList(list){
+  const g = $('grid');
+  if (!list.length){
+    g.innerHTML = `<div class="empty">${S.points.length ? 'Hech narsa topilmadi.' : 'Hali nuqta yo‘q. «+ Yangi nuqta» tugmasini bosing.'}</div>`;
+    return;
+  }
+  g.innerHTML = list.map(p => {
+    const els = (p.elements||[]).slice(0,2).map(elText);
+    const sm = samplesOf(p);
+    const tags = [];
+    if (sm.length) tags.push(`🧪 ${sm.length} namuna`);
+    if ((p.photos||[]).length) tags.push(`📷 ${p.photos.length}`);
+    if ((p.elements||[]).length > 2) tags.push(`+${p.elements.length-2} element`);
+    return `<button class="pt" data-id="${esc(p._id)}">
+      <div class="pt-top"><span class="pt-name">${esc(p.name)}</span>${p.flag ? '<span class="flag">⚠ tekshirish</span>' : ''}</div>
+      <div class="pt-coord">${esc(coordText(p))}${typeof p.alt==='number' ? ' · '+p.alt+' m' : ''}</div>
+      ${p.rock ? `<div class="pt-rock">${esc(p.rock)}</div>` : ''}
+      ${els.length ? `<div class="pt-meta">${esc(els.join(' · '))}</div>` : ''}
+      ${p.flag && p.flagNote ? `<div class="pt-meta" style="color:var(--warn)">${esc(p.flagNote)}</div>` : ''}
+      ${p.date || p.route ? `<div class="pt-meta">${esc([p.date, p.route ? 'marshrut '+p.route : ''].filter(Boolean).join(' · '))}</div>` : ''}
+      ${tags.length ? `<div class="pt-tags">${tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+    </button>`;
+  }).join('');
+  g.querySelectorAll('.pt').forEach(b => b.onclick = () => openEditor(b.dataset.id));
+}
+
+/* ---------------- geo transforms ---------------- */
+function niceStep(x){
+  const steps = [0.005,0.01,0.02,0.05,0.1,0.2,0.5,1,2,5,10,20,50,100,200,500];
+  return steps.find(s => s >= x) || 1000;
+}
+function solve3(M, b){
+  const A = M.map((r,i) => [...r, b[i]]);
+  for (let c = 0; c < 3; c++){
+    let p = c; for (let r = c+1; r < 3; r++) if (Math.abs(A[r][c]) > Math.abs(A[p][c])) p = r;
+    [A[c], A[p]] = [A[p], A[c]];
+    if (Math.abs(A[c][c]) < 1e-12) return null;
+    for (let r = 0; r < 3; r++) if (r !== c){ const f = A[r][c]/A[c][c]; for (let k = c; k < 4; k++) A[r][k] -= f*A[c][k]; }
+  }
+  return [A[0][3]/A[0][0], A[1][3]/A[1][1], A[2][3]/A[2][2]];
+}
+// image px:  u = p0*x + p1*Y + p2 ,  v = q0*x + q1*Y + q2 ;  x = (lon-lon0)*kx [km], Y = -(lat-lat0)*ky [km]
+function makeTransform(p, q, lat0, lon0){
+  const kx = 111.320*Math.cos(lat0*Math.PI/180), ky = 110.574;
+  const det = p[0]*q[1] - p[1]*q[0];
+  return {
+    fwd: (lat, lon) => { const x = (lon-lon0)*kx, Y = -(lat-lat0)*ky; return [p[0]*x + p[1]*Y + p[2], q[0]*x + q[1]*Y + q[2]]; },
+    inv: (u, v) => { const a = u - p[2], b = v - q[2]; const x = (q[1]*a - p[1]*b)/det, Y = (-q[0]*a + p[0]*b)/det; return [lat0 - Y/ky, lon0 + x/kx]; },
+    pxPerKm: Math.sqrt(Math.abs(det)),
+    north: Math.atan2(-p[1], q[1]) * 180/Math.PI
+  };
+}
+function fitGcps(g){
+  if (!g || g.length < 2) return null;
+  const lat0 = g.reduce((s,c) => s + c.lat, 0)/g.length, lon0 = g.reduce((s,c) => s + c.lon, 0)/g.length;
+  const kx = 111.320*Math.cos(lat0*Math.PI/180), ky = 110.574;
+  const X = g.map(c => (c.lon-lon0)*kx), Y = g.map(c => -(c.lat-lat0)*ky);
+  let p, q;
+  if (g.length === 2){
+    const dz = [X[1]-X[0], Y[1]-Y[0]], dw = [g[1].u-g[0].u, g[1].v-g[0].v];
+    const den = dz[0]*dz[0] + dz[1]*dz[1];
+    if (den < 1e-9) return null;
+    const mr = (dw[0]*dz[0] + dw[1]*dz[1])/den, mi = (dw[1]*dz[0] - dw[0]*dz[1])/den;
+    const tr = g[0].u - (mr*X[0] - mi*Y[0]), ti = g[0].v - (mi*X[0] + mr*Y[0]);
+    p = [mr, -mi, tr]; q = [mi, mr, ti];
+  } else {
+    const M = [[0,0,0],[0,0,0],[0,0,0]], bu = [0,0,0], bv = [0,0,0];
+    g.forEach((c,i) => { const r = [X[i], Y[i], 1]; for (let a = 0; a < 3; a++){ for (let b = 0; b < 3; b++) M[a][b] += r[a]*r[b]; bu[a] += r[a]*c.u; bv[a] += r[a]*c.v; } });
+    p = solve3(M, bu); q = solve3(M, bv);
+    if (!p || !q) return null;
+  }
+  const T = makeTransform(p, q, lat0, lon0);
+  if (!isFinite(T.pxPerKm) || T.pxPerKm <= 0) return null;
+  T.res = g.map(c => { const [u,v] = T.fwd(c.lat, c.lon); return Math.hypot(u-c.u, v-c.v)/T.pxPerKm*1000; });
+  T.rms = g.length > 2 ? Math.sqrt(T.res.reduce((s,r) => s + r*r, 0)/g.length) : null;
+  return T;
+}
+
+/* ---------------- pan & zoom ---------------- */
+class PanZoom {
+  constructor(svg, onChange, onClick, onHover){
+    this.svg = svg; this.onChange = onChange; this.onClick = onClick; this.onHover = onHover;
+    this.vb = {x:0, y:0, w:100, h:100}; this.ptrs = new Map(); this.minW = 1e-9; this.maxW = 1e12;
+    svg.addEventListener('wheel', e => { e.preventDefault(); this.zoomAt(this.pt(e), e.deltaY < 0 ? 1/1.25 : 1.25); }, {passive:false});
+    svg.addEventListener('pointerdown', e => {
+      if (e.button !== undefined && e.button !== 0) return;
+      try { svg.setPointerCapture(e.pointerId); } catch {}
+      this.ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+      if (this.ptrs.size === 1){ this.start = {cx: e.clientX, cy: e.clientY, vb: {...this.vb}, target: e.target}; this.moved = false; }
+      else { this.moved = true; this.pinch = this.pinchState(); }
+    });
+    svg.addEventListener('pointermove', e => {
+      if (!this.ptrs.has(e.pointerId)){ if (this.onHover) this.onHover(this.pt(e)); return; }
+      this.ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+      if (this.ptrs.size === 2 && this.pinch){
+        const now = this.pinchState(); const f = this.pinch.d / Math.max(now.d, 1);
+        const r = svg.getBoundingClientRect();
+        const m = {x: this.vb.x + (now.mx - r.left)/r.width*this.vb.w, y: this.vb.y + (now.my - r.top)/r.height*this.vb.h};
+        this.zoomAt(m, f); this.pinch = now; return;
+      }
+      if (this.ptrs.size !== 1 || !this.start) return;
+      const dx = e.clientX - this.start.cx, dy = e.clientY - this.start.cy;
+      if (!this.moved && Math.hypot(dx,dy) < 5) return;
+      this.moved = true;
+      const k = this.start.vb.w / svg.getBoundingClientRect().width;
+      this.vb.x = this.start.vb.x - dx*k; this.vb.y = this.start.vb.y - dy*k; this.apply();
+    });
+    const up = e => {
+      if (!this.ptrs.has(e.pointerId)) return;
+      this.ptrs.delete(e.pointerId);
+      if (this.ptrs.size === 0){
+        if (!this.moved && this.start && e.type === 'pointerup' && this.onClick) this.onClick(this.pt(e), this.start.target);
+        this.start = null; this.pinch = null;
+      } else if (this.ptrs.size === 1){
+        const [p] = this.ptrs.values(); this.start = {cx: p.x, cy: p.y, vb: {...this.vb}, target: null}; this.pinch = null;
+      }
+    };
+    svg.addEventListener('pointerup', up); svg.addEventListener('pointercancel', up);
+    svg.addEventListener('pointerleave', () => { if (this.onHover && !this.ptrs.size) this.onHover(null); });
+  }
+  pinchState(){ const [a,b] = [...this.ptrs.values()]; return {d: Math.hypot(a.x-b.x, a.y-b.y), mx: (a.x+b.x)/2, my: (a.y+b.y)/2}; }
+  pt(e){ const r = this.svg.getBoundingClientRect(); return {x: this.vb.x + (e.clientX - r.left)/r.width*this.vb.w, y: this.vb.y + (e.clientY - r.top)/r.height*this.vb.h}; }
+  apply(){ const v = this.vb; this.svg.setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`); if (this.onChange) this.onChange(); }
+  zoomAt(p, f){
+    const w = Math.min(this.maxW, Math.max(this.minW, this.vb.w*f)); f = w/this.vb.w;
+    this.vb.x = p.x - (p.x - this.vb.x)*f; this.vb.y = p.y - (p.y - this.vb.y)*f; this.vb.w *= f; this.vb.h *= f; this.apply();
+  }
+  zoomCenter(f){ this.zoomAt({x: this.vb.x + this.vb.w/2, y: this.vb.y + this.vb.h/2}, f); }
+  aspect(){ const r = this.svg.getBoundingClientRect(); return r.width && r.height ? r.width/r.height : 0; }
+  fit(b, pad = 1.12){
+    const asp = this.aspect(); if (!asp) return false;
+    let w = Math.max(b.w, 1e-9)*pad, h = Math.max(b.h, 1e-9)*pad;
+    if (w/h < asp) w = h*asp; else h = w/asp;
+    this.vb = {x: b.x + b.w/2 - w/2, y: b.y + b.h/2 - h/2, w, h}; this.apply(); return true;
+  }
+  resize(){ const asp = this.aspect(); if (!asp) return; const cy = this.vb.y + this.vb.h/2; this.vb.h = this.vb.w/asp; this.vb.y = cy - this.vb.h/2; this.apply(); }
+}
+
+/* ---------------- main map ---------------- */
+let pz = null, mapT = null, mapKey = '', mapPts = [];
+const activeBm = () => S.basemaps.find(b => b._id === S.bmId) || null;
+const fmtKm = km => km < 1 ? Math.round(km*1000) + ' m' : (Math.round(km*10)/10) + ' km';
+function ensurePz(){
+  if (pz) return;
+  pz = new PanZoom($('map'), renderOverlay, (pt, target) => {
+    const g = target && target.closest ? target.closest('.p') : null;
+    if (g){ openEditor(g.dataset.id); return; }
+    if (S.pick && mapT){ const [lat, lon] = mapT.inv(pt.x, pt.y); setPick(false); openEditor(null, {lat:+lat.toFixed(6), lon:+lon.toFixed(6)}); }
+  }, pt => {
+    if (!pt || !mapT){ $('cursor').textContent = ''; return; }
+    const [lat, lon] = mapT.inv(pt.x, pt.y);
+    $('cursor').textContent = `${fmtDM(lat,true)}, ${fmtDM(lon,false)}`;
+  });
+  window.addEventListener('resize', () => { if (S.view === 'map'){ pz.resize(); } });
+}
+function setPick(on){
+  S.pick = on; $('pickBtn').setAttribute('aria-pressed', on); $('map').classList.toggle('pick', on);
+  $('mapHint').textContent = on ? 'Xaritada yangi nuqta joyini bosing. Koordinata avtomatik yoziladi.' :
+    'Sichqoncha g‘ildiragi yoki «+ −» bilan kattalashtiring, sudrab suring. Nuqtani bossangiz, u ochiladi. O‘z geologik yoki topografik xaritangizni «🗺 Xarita qo‘shish» orqali ulang.';
+}
+function renderMap(list){
+  ensurePz();
+  let bm = activeBm();
+  if (S.bmId && !bm && S.basemaps.length) { S.bmId = ''; }
+  $('bmSel').innerHTML = `<option value="">Sxema (asossiz)</option>` +
+    S.basemaps.slice().sort((a,b) => String(a.name).localeCompare(String(b.name))).map(b => `<option value="${esc(b._id)}" ${b._id===S.bmId?'selected':''}>🗺 ${esc(b.name || 'Xarita')}</option>`).join('');
+  $('bmEdit').classList.toggle('hidden', !bm);
+  $('bmAdd').disabled = !(assets && bmColl);
+  $('bmAdd').title = (assets && bmColl) ? '' : 'Xarita qo‘shish faqat claude.ai ichida ishlaydi';
+  mapPts = list.filter(hasCoord);
+  let key; $('mapMsg').classList.add('hidden');
+  if (bm){
+    mapT = fitGcps(bm.gcps || []);
+    key = 'bm:' + bm._id + ':' + (bm.updatedAt || '');
+    $('mBase').innerHTML = `<image href="${blobUrl(bm.assetId)}" x="0" y="0" width="${bm.w}" height="${bm.h}" preserveAspectRatio="none"/>`;
+    if (!mapT){ $('mapMsg').textContent = 'Bu xarita hali koordinataga bog‘lanmagan. «Bog‘lashni tahrirlash» tugmasini bosing.'; $('mapMsg').classList.remove('hidden'); }
+  } else {
+    const n = mapPts.length || 1;
+    const lat0 = mapPts.length ? mapPts.reduce((s,p) => s + p.lat, 0)/n : 39.4, lon0 = mapPts.length ? mapPts.reduce((s,p) => s + p.lon, 0)/n : 66.9;
+    mapT = makeTransform([100,0,0],[0,100,0], lat0, lon0);
+    key = 'schema:' + S.group + ':' + S.q + ':' + mapPts.length;
+    $('mBase').innerHTML = '';
+    if (!mapPts.length){ $('mapMsg').textContent = 'Koordinatali nuqta yo‘q'; $('mapMsg').classList.remove('hidden'); }
+  }
+  if (key !== mapKey){ if (fitMap()) mapKey = key; } else renderOverlay();
+}
+function fitMap(){
+  const bm = activeBm();
+  if (bm && bm.w) return pz.fit({x:0, y:0, w:bm.w, h:bm.h}, 1.02);
+  return fitPoints();
+}
+function fitPoints(){
+  if (!mapT) return false;
+  const P = mapPts.map(p => mapT.fwd(p.lat, p.lon));
+  if (!P.length) return pz.fit({x:-100, y:-100, w:200, h:200});
+  const xs = P.map(a => a[0]), ys = P.map(a => a[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const minSpan = 0.3*mapT.pxPerKm;
+  const w = Math.max(x1-x0, minSpan), h = Math.max(y1-y0, minSpan);
+  return pz.fit({x:(x0+x1)/2 - w/2, y:(y0+y1)/2 - h/2, w, h}, 1.25);
+}
+function renderOverlay(){
+  const svg = $('map'), r = svg.getBoundingClientRect();
+  if (!r.width || !mapT){ $('mOv').innerHTML = ''; return; }
+  const vb = pz.vb, k = vb.w / r.width, out = [];
+  const kmPerPx = k / mapT.pxPerKm;
+  if (!activeBm()){
+    const stepU = niceStep(kmPerPx*110) * mapT.pxPerKm;
+    for (let x = Math.floor(vb.x/stepU)*stepU; x < vb.x + vb.w; x += stepU) out.push(`<line x1="${x}" y1="${vb.y}" x2="${x}" y2="${vb.y+vb.h}" stroke="#E7E0D2" stroke-width="${k}"/>`);
+    for (let y = Math.floor(vb.y/stepU)*stepU; y < vb.y + vb.h; y += stepU) out.push(`<line x1="${vb.x}" y1="${y}" x2="${vb.x+vb.w}" y2="${y}" stroke="#E7E0D2" stroke-width="${k}"/>`);
+  }
+  const P = new Map(mapPts.map(p => [p._id, mapT.fwd(p.lat, p.lon)]));
+  const byG = {};
+  mapPts.slice().sort(natural).forEach(p => (byG[groupOf(p.name)] ||= []).push(p));
+  Object.values(byG).forEach(g => { if (g.length > 1) out.push(`<polyline points="${g.map(p => P.get(p._id).join(',')).join(' ')}" fill="none" stroke="${activeBm() ? '#FFFFFF' : '#B8C9BD'}" stroke-opacity=".9" stroke-width="${1.6*k}" stroke-dasharray="${5*k} ${5*k}"/>`); });
+  const placed = [];
+  mapPts.forEach(p => {
+    const [x, y] = P.get(p._id);
+    const sx = (x - vb.x)/k, sy = (y - vb.y)/k;
+    if (sx < -50 || sy < -50 || sx > r.width + 50 || sy > r.height + 50) return;
+    let ly = sy - 10;
+    while (placed.some(q => Math.abs(q.x - sx) < 64 && Math.abs(q.y - ly) < 15)) ly -= 15;
+    placed.push({x: sx, y: ly});
+    const col = p.flag ? '#B4541E' : '#2C5E3F', lyU = vb.y + ly*k;
+    out.push(`<g class="p" data-id="${esc(p._id)}"><circle cx="${x}" cy="${y}" r="${12*k}" fill="transparent"/>` +
+      `<circle cx="${x}" cy="${y}" r="${5.5*k}" fill="${col}" stroke="#fff" stroke-width="${1.8*k}"/>` +
+      (ly !== sy - 10 ? `<line x1="${x}" y1="${y - 5*k}" x2="${x}" y2="${lyU + 3*k}" stroke="#7D867F" stroke-width="${0.8*k}"/>` : '') +
+      `<text x="${x + 7*k}" y="${lyU}" font-size="${13*k}" font-weight="700" fill="${col}" paint-order="stroke" stroke="#FFFFFF" stroke-width="${3.2*k}" stroke-linejoin="round">${esc(p.name)}</text></g>`);
+  });
+  $('mOv').innerHTML = out.join('');
+  const barKm = niceStep(kmPerPx*90);
+  $('scaleBar').style.width = (barKm/kmPerPx) + 'px';
+  $('scaleTxt').textContent = fmtKm(barKm);
+  $('north').querySelector('svg').style.transform = `rotate(${mapT.north}deg)`;
+}
+
+/* ---------------- georeference editor ---------------- */
+const G = { id: null, bm: null, pending: null, pz: null, uploading: false, delArmed: false };
+function openGeoref(bm){
+  G.id = bm ? bm._id : null;
+  G.bm = bm ? JSON.parse(JSON.stringify(bm)) : { name: '', assetId: null, w: 0, h: 0, gcps: [] };
+  delete G.bm._id;
+  G.pending = null; G.delArmed = false;
+  $('gTitle').textContent = bm ? 'Xarita bog‘lanishini tahrirlash' : 'Yangi xaritani bog‘lash';
+  $('gName').value = G.bm.name || '';
+  $('gFileStatus').textContent = ''; $('gMsg2').textContent = '';
+  $('gDelete').classList.toggle('hidden', !bm); $('gDelete').textContent = 'Xaritani o‘chirish';
+  $('gFileBtn').textContent = bm ? '📁 Rasmni almashtirish' : '📁 Rasm tanlash';
+  $('gOverlay').classList.remove('hidden'); document.body.style.overflow = 'hidden';
+  if (!G.pz){
+    G.pz = new PanZoom($('gsvg'), drawGOverlay, pt => {
+      if (!G.bm.assetId) return;
+      G.pending = {u: pt.x, v: pt.y}; showPending(); drawGOverlay();
+    });
+  }
+  requestAnimationFrame(() => drawG(true));
+}
+function closeGeoref(){ $('gOverlay').classList.add('hidden'); document.body.style.overflow = $('overlay').classList.contains('hidden') ? '' : 'hidden'; }
+function drawG(refit){
+  const b = G.bm;
+  $('gMsg').classList.toggle('hidden', !!b.assetId);
+  $('gBase').innerHTML = b.assetId ? `<image href="${blobUrl(b.assetId)}" x="0" y="0" width="${b.w}" height="${b.h}" preserveAspectRatio="none"/>` : '';
+  if (refit && b.assetId) G.pz.fit({x:0, y:0, w:b.w, h:b.h}, 1.02);
+  drawGOverlay(); renderGTable();
+}
+function drawGOverlay(){
+  const r = $('gsvg').getBoundingClientRect(); if (!r.width) return;
+  const k = G.pz.vb.w / r.width, out = [];
+  const T = fitGcps(G.bm.gcps);
+  const mark = (u, v, label, col) =>
+    `<circle cx="${u}" cy="${v}" r="${9*k}" fill="none" stroke="${col}" stroke-width="${2.5*k}"/>` +
+    `<line x1="${u-14*k}" y1="${v}" x2="${u+14*k}" y2="${v}" stroke="${col}" stroke-width="${1.5*k}"/><line x1="${u}" y1="${v-14*k}" x2="${u}" y2="${v+14*k}" stroke="${col}" stroke-width="${1.5*k}"/>` +
+    `<text x="${u + 12*k}" y="${v - 10*k}" font-size="${14*k}" font-weight="800" fill="${col}" paint-order="stroke" stroke="#fff" stroke-width="${3.5*k}">${esc(label)}</text>`;
+  G.bm.gcps.forEach((c,i) => out.push(mark(c.u, c.v, (i+1) + (c.label ? ' · ' + c.label : ''), '#2C5E3F')));
+  if (T){ // show Pikitashka points projected, to check the fit
+    S.points.filter(hasCoord).forEach(p => {
+      const [u,v] = T.fwd(p.lat, p.lon);
+      if (u < -b0(G) || v < -b0(G) || u > G.bm.w + b0(G) || v > G.bm.h + b0(G)) return;
+      out.push(`<circle cx="${u}" cy="${v}" r="${4*k}" fill="#B4541E" stroke="#fff" stroke-width="${1.2*k}"/><text x="${u+6*k}" y="${v+4*k}" font-size="${11*k}" fill="#B4541E" paint-order="stroke" stroke="#fff" stroke-width="${3*k}">${esc(p.name)}</text>`);
+    });
+  }
+  if (G.pending) out.push(mark(G.pending.u, G.pending.v, '?', '#A4622A'));
+  $('gOv').innerHTML = out.join('');
+}
+const b0 = G => Math.max(G.bm.w, G.bm.h)*0.05;
+function showPending(){
+  const has = !!G.pending;
+  $('gPending').classList.toggle('hidden', !has);
+  if (!has) return;
+  $('gPendTitle').textContent = `${G.bm.gcps.length + 1}-tayanch nuqta:`;
+  $('gPtSel').innerHTML = `<option value="">Nuqtadan tanlash…</option>` + S.points.filter(hasCoord).sort(natural).map(p => `<option value="${esc(p._id)}">${esc(p.name)}</option>`).join('');
+  $('gCoord').value = ''; $('gCoord').focus();
+}
+$('gPtSel').onchange = () => { const p = S.points.find(x => x._id === $('gPtSel').value); if (p) $('gCoord').value = coordText(p, 'dm'); };
+$('gAddGcp').onclick = () => {
+  const c = parseCoord($('gCoord').value);
+  if (!c){ $('gCoord').focus(); $('gMsg2').textContent = 'Koordinatani tushunib bo‘lmadi.'; return; }
+  const p = S.points.find(x => x._id === $('gPtSel').value);
+  G.bm.gcps.push({u: +G.pending.u.toFixed(2), v: +G.pending.v.toFixed(2), lat: c.lat, lon: c.lon, label: p && coordText(p,'dm') === $('gCoord').value ? p.name : ''});
+  G.pending = null; $('gMsg2').textContent = ''; showPending(); drawGOverlay(); renderGTable();
+};
+$('gCancelGcp').onclick = () => { G.pending = null; showPending(); drawGOverlay(); };
+function renderGTable(){
+  const g = G.bm.gcps, T = fitGcps(g);
+  $('gTable').innerHTML = g.length ? g.map((c,i) => `<tr><td><b>${i+1}</b></td><td>${esc(c.label || '—')}</td><td style="font-family:ui-monospace,Menlo,monospace;font-size:13px">${esc(fmtDM(c.lat,true) + ', ' + fmtDM(c.lon,false))}</td><td>${T && T.rms !== null ? Math.round(T.res[i]) + ' m' : '—'}</td><td><button data-i="${i}" aria-label="O‘chirish">×</button></td></tr>`).join('')
+    : `<tr><td colspan="5" class="note">Hali tayanch nuqta yo‘q. Xaritada koordinatasi ma’lum joyni bosing.</td></tr>`;
+  $('gTable').querySelectorAll('button').forEach(b => b.onclick = () => { g.splice(+b.dataset.i, 1); drawGOverlay(); renderGTable(); });
+  let q;
+  if (!G.bm.assetId) q = '';
+  else if (g.length < 2) q = `<span class="q-bad">Yana ${2 - g.length} ta tayanch nuqta kerak.</span>`;
+  else if (!T) q = '<span class="q-bad">Nuqtalar bir joyda yoki bir chiziqda. Xaritaning boshqa burchagidan nuqta qo‘shing.</span>';
+  else {
+    const sc = `Masshtab: 1 km ≈ ${Math.round(T.pxPerKm)} piksel. `;
+    if (T.rms === null) q = `<span class="q-ok">Bog‘landi ✓</span> ${sc}Aniqlikni tekshirish uchun 3-nuqtani qo‘shing.`;
+    else q = `<span class="${T.rms < 50 ? 'q-ok' : 'q-bad'}">O‘rtacha xatolik: ${Math.round(T.rms)} m</span>. ${sc}${T.rms >= 50 ? 'Xatoligi katta nuqtani tekshiring yoki o‘chiring.' : 'Pikitashka nuqtalari xaritada to‘q sariq rangda ko‘rsatilgan, joylashuvini tekshiring.'}`;
+  }
+  $('gQuality').innerHTML = q;
+  $('gSave').disabled = !(G.bm.assetId && T) || G.uploading;
+}
+$('gFileBtn').onclick = () => $('gFile').click();
+$('gFile').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = '';
+  if (!f || !assets) return;
+  G.uploading = true; renderGTable();
+  $('gFileStatus').innerHTML = '<span class="spin"></span>Yuklanmoqda…';
+  try {
+    const url = URL.createObjectURL(f);
+    const dim = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res([im.naturalWidth, im.naturalHeight]); im.onerror = rej; im.src = url; });
+    URL.revokeObjectURL(url);
+    const r = await assets.upload(f);
+    const replacing = !!G.bm.assetId;
+    G.bm.assetId = r.id; G.bm.w = dim[0]; G.bm.h = dim[1];
+    if (replacing) G.bm.gcps = [];
+    if (!$('gName').value.trim()) $('gName').value = f.name.replace(/\.[^.]+$/, '');
+    $('gFileStatus').textContent = `${f.name} · ${dim[0]}×${dim[1]}`;
+    G.pending = null; showPending(); drawG(true);
+  } catch (e) { $('gFileStatus').textContent = 'Rasm yuklanmadi. JPG yoki PNG, 20 MB gacha.'; }
+  finally { G.uploading = false; renderGTable(); }
+};
+$('gSave').onclick = async () => {
+  const id = G.id || ('bm-' + Date.now().toString(36));
+  const body = { ...G.bm, name: $('gName').value.trim() || 'Xarita', updatedAt: new Date().toISOString() };
+  $('gSave').disabled = true; $('gMsg2').innerHTML = '<span class="spin"></span>Saqlanmoqda…';
+  try {
+    await bmColl.doc(id).set(body);
+    S.bmId = id; try { localStorage.setItem('pikitashka.bm', id); } catch {}
+    mapKey = ''; closeGeoref(); setView('map'); setStatus('Xarita saqlandi ✓ ' + body.name);
+  } catch (e) { $('gMsg2').textContent = errText(e); $('gSave').disabled = false; }
+};
+$('gDelete').onclick = async () => {
+  if (!G.delArmed){ G.delArmed = true; $('gDelete').textContent = 'Rostdan o‘chirilsinmi? Ha'; return; }
+  try {
+    const old = S.basemaps.find(b => b._id === G.id);
+    await bmColl.doc(G.id).delete();
+    if (old && old.assetId && assets) { try { await assets.delete(old.assetId); } catch {} }
+    if (S.bmId === G.id){ S.bmId = ''; try { localStorage.setItem('pikitashka.bm', ''); } catch {} }
+    mapKey = ''; closeGeoref(); render();
+  } catch (e) { $('gMsg2').textContent = errText(e); }
+};
+$('gCancel').onclick = closeGeoref; $('gClose').onclick = closeGeoref;
+$('gzIn').onclick = () => G.pz.zoomCenter(1/1.5); $('gzOut').onclick = () => G.pz.zoomCenter(1.5);
+$('gzFit').onclick = () => G.bm.assetId && G.pz.fit({x:0, y:0, w:G.bm.w, h:G.bm.h}, 1.02);
+
+/* main map controls */
+$('bmSel').onchange = () => { S.bmId = $('bmSel').value; try { localStorage.setItem('pikitashka.bm', S.bmId); } catch {} mapKey = ''; render(); };
+$('bmAdd').onclick = () => openGeoref(null);
+$('bmEdit').onclick = () => { const bm = activeBm(); if (bm) openGeoref(bm); };
+$('pickBtn').onclick = () => setPick(!S.pick);
+$('zIn').onclick = () => pz && pz.zoomCenter(1/1.5);
+$('zOut').onclick = () => pz && pz.zoomCenter(1.5);
+$('zFit').onclick = () => { if (pz) fitMap(); };
+
+
+/* ---------------- photo EXIF GPS ---------------- */
+async function readExif(file){
+  const buf = await file.slice(0, 512*1024).arrayBuffer();
+  const dv = new DataView(buf);
+  if (dv.byteLength < 4 || dv.getUint16(0) !== 0xFFD8) return null;
+  let off = 2;
+  while (off + 10 < dv.byteLength){
+    const marker = dv.getUint16(off);
+    if ((marker & 0xFF00) !== 0xFF00 || marker === 0xFFDA) break;
+    const len = dv.getUint16(off + 2);
+    if (marker === 0xFFE1 && dv.getUint32(off + 4) === 0x45786966) return parseTiff(dv, off + 10);
+    off += 2 + len;
+  }
+  return null;
+}
+function parseTiff(dv, t){
+  try {
+    const le = dv.getUint16(t) === 0x4949;
+    const u8 = o => dv.getUint8(t + o), u16 = o => dv.getUint16(t + o, le), u32 = o => dv.getUint32(t + o, le);
+    const ifd = o => { const n = u16(o), tags = {}; for (let i = 0; i < n; i++){ const e = o + 2 + i*12; tags[u16(e)] = { count: u32(e + 4), at: e + 8 }; } return tags; };
+    const rat = o => { const n = u32(o), d = u32(o + 4); return d ? n/d : 0; };
+    const rats = (tag, k) => { const p = u32(tag.at); return Array.from({length: k}, (_, i) => rat(p + i*8)); };
+    const str = tag => { const p = tag.count > 4 ? u32(tag.at) : tag.at; let s = ''; for (let i = 0; i < tag.count - 1; i++) s += String.fromCharCode(u8(p + i)); return s; };
+    const ifd0 = ifd(u32(4));
+    const out = {};
+    if (ifd0[0x8769]){ const ex = ifd(u32(ifd0[0x8769].at)); const d = ex[0x9003] || ex[0x9004]; if (d){ const m = str(d).match(/^(\d{4}):(\d{2}):(\d{2})/); if (m) out.date = `${m[1]}-${m[2]}-${m[3]}`; } }
+    if (!out.date && ifd0[0x0132]){ const m = str(ifd0[0x0132]).match(/^(\d{4}):(\d{2}):(\d{2})/); if (m) out.date = `${m[1]}-${m[2]}-${m[3]}`; }
+    if (ifd0[0x8825]){
+      const g = ifd(u32(ifd0[0x8825].at));
+      if (g[2] && g[4]){
+        const [a,b,c] = rats(g[2], 3), [d,e,f] = rats(g[4], 3);
+        let lat = a + b/60 + c/3600, lon = d + e/60 + f/3600;
+        if (g[1] && String.fromCharCode(u8(g[1].at)) === 'S') lat = -lat;
+        if (g[3] && String.fromCharCode(u8(g[3].at)) === 'W') lon = -lon;
+        if (isFinite(lat) && isFinite(lon) && (lat || lon)){ out.lat = +lat.toFixed(6); out.lon = +lon.toFixed(6); }
+        if (g[6]){ let alt = rat(u32(g[6].at)); if (g[5] && u8(g[5].at) === 1) alt = -alt; if (isFinite(alt)) out.alt = Math.round(alt); }
+      }
+    }
+    return out;
+  } catch { return null; }
+}
+const NO_GPS = 'Fotoda GPS ma’lumoti topilmadi. Agar «📷 Kamera» orqali olgan bo‘lsangiz, ba’zi telefonlar bunday rasmga GPS yozmaydi: rasmni telefonning o‘z kamera ilovasida oling va «🖼 Galereyadan» tanlang. Kamera sozlamalarida «Joylashuv teglari» yoqilgan bo‘lsin; iPhone’da rasm tanlayotganda «Options → Location» ni yoqing.';
+async function uploadPhotoTo(file, token){
+  if (!assets) return;
+  try { const r = await assets.upload(file); if (S.edit && S.edit._token === token){ S.edit.photos.push(r.id); renderPhotos(); } } catch {}
+}
+$('photoPointBtn').onclick = () => $('photoPointInput').click();
+$('photoPointCam').onclick = () => $('photoPointCamInput').click();
+$('photoPointInput').onchange = $('photoPointCamInput').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+  setStatus('Foto o‘qilmoqda…');
+  const x = await readExif(f) || {};
+  openEditor(null, x);
+  const token = S.edit._token = Math.random();
+  if (typeof x.lat === 'number') $('eGpsMsg').textContent = `✓ Fotodan olindi: koordinata${typeof x.alt === 'number' ? ', balandlik' : ''}${x.date ? ', sana' : ''}. Telefon GPS aniqligi odatda 3–15 m.`;
+  else $('eGpsMsg').textContent = NO_GPS;
+  setStatus('');
+  uploadPhotoTo(f, token);
+};
+$('eGpsBtn').onclick = () => $('eGpsInput').click();
+$('eGpsCam').onclick = () => $('eGpsCamInput').click();
+$('eGpsInput').onchange = $('eGpsCamInput').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; if (!f || !S.edit) return;
+  const x = await readExif(f) || {};
+  if (typeof x.lat !== 'number'){ $('eGpsMsg').textContent = NO_GPS; return; }
+  $('eCoord').value = `${fmtDM(x.lat,true)}, ${fmtDM(x.lon,false)}`; updateParsed();
+  if (typeof x.alt === 'number') $('eAlt').value = x.alt;
+  if (x.date && !$('eDate').value) $('eDate').value = x.date;
+  $('eGpsMsg').textContent = `✓ Fotodan olindi${typeof x.alt === 'number' ? ' (balandlik bilan)' : ''}. Foto nuqtaga ham qo‘shildi.`;
+  const token = S.edit._token = S.edit._token || Math.random();
+  uploadPhotoTo(f, token);
+};
+
+/* ---------------- editor ---------------- */
+let delArmed = false, aiCtl = null;
+function openEditor(id, preset){
+  const p = id ? S.points.find(x => x._id === id) : null;
+  S.editId = p ? p._id : null;
+  S.edit = p ? JSON.parse(JSON.stringify(p)) : { name:'', date: todayStr(), route:'', elements:[], photos:[], samples:'', description:'', rock:'', flag:false, flagNote:'' };
+  if (!p && preset){
+    if (typeof preset.lat === 'number'){ S.edit.lat = preset.lat; S.edit.lon = preset.lon; }
+    if (typeof preset.alt === 'number') S.edit.alt = preset.alt;
+    if (preset.date) S.edit.date = preset.date;
+  }
+  $('eGpsMsg').textContent = '';
+  const e = S.edit;
+  $('mTitle').textContent = p ? 'Nuqta ' + p.name : 'Yangi nuqta';
+  $('eName').value = e.name || ''; $('eDate').value = e.date || ''; $('eRoute').value = e.route || '';
+  $('eCoord').value = hasCoord(e) ? coordText(e, 'dm') : '';
+  $('eAlt').value = typeof e.alt === 'number' ? e.alt : '';
+  $('eRock').value = e.rock || ''; $('eDesc').value = e.description || ''; $('eSamples').value = e.samples || '';
+  $('eFlag').checked = !!e.flag; $('eFlagNote').value = e.flagNote || '';
+  $('mDelete').classList.toggle('hidden', !p); delArmed = false; $('mDelete').textContent = 'O‘chirish';
+  $('mMsg').textContent = ''; $('aiStatus').textContent = '';
+  updateParsed(); renderEls(); renderPhotos();
+  $('overlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => (p ? $('eRock') : $('eName')).focus(), 50);
+  $('eGeoMsg') && ($('eGeoMsg').textContent = '');
+  if (!p && !(preset && typeof preset.lat === 'number')) startGeo();
+}
+function closeEditor(){
+  if (aiCtl) aiCtl.abort();
+  stopGeo();
+  $('overlay').classList.add('hidden'); document.body.style.overflow = '';
+  S.edit = null; S.editId = null;
+}
+function updateLinks(c){
+  $('eLinks').innerHTML = c ? `<a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}" target="_blank" rel="noopener">🌍 Google Maps</a>`
+    + `<a href="https://yandex.uz/maps/?pt=${c.lon},${c.lat}&z=16&l=sat" target="_blank" rel="noopener">🛰 Yandex sputnik</a>`
+    + `<a href="https://earth.google.com/web/search/${c.lat},${c.lon}" target="_blank" rel="noopener">🌐 Google Earth</a>` : '';
+}
+function updateParsed(){
+  const v = $('eCoord').value, el = $('eParsed');
+  updateLinks(parseCoord(v));
+  if (!v.trim()){ el.className = 'parsed'; el.textContent = 'Formatlar: N 39° 23.158′, E 066° 27.275′ · 39.38597, 66.45458 · 39 23 9.5, 66 27 16.5'; return; }
+  const c = parseCoord(v);
+  if (c){ el.className = 'parsed ok'; el.textContent = `✓ ${fmtDM(c.lat,true)}, ${fmtDM(c.lon,false)}  (${c.lat.toFixed(6)}, ${c.lon.toFixed(6)})`; }
+  else { el.className = 'parsed bad'; el.textContent = 'Koordinatani tushunib bo‘lmadi. Kasr qismini nuqta bilan yozing (23.158).'; }
+}
+$('eCoord').addEventListener('input', updateParsed);
+
+function renderEls(){
+  const box = $('eEls'); const els = S.edit.elements;
+  box.innerHTML = els.map((e,i) => `<div class="el" data-i="${i}">
+    <label class="f">Turi<select class="inp" data-k="type">${EL_TYPES.map(t => `<option ${t===e.type?'selected':''}>${t}</option>`).join('')}</select></label>
+    <label class="f">Yotish azimuti, °<input class="inp" data-k="az" inputmode="numeric" value="${e.az ?? ''}" placeholder="0–360"></label>
+    <label class="f">Yotish burchagi, °<input class="inp" data-k="dip" inputmode="numeric" value="${e.dip ?? ''}" placeholder="0–90"></label>
+    <button class="rm" title="O‘chirish" aria-label="Elementni o‘chirish">×</button></div>`).join('');
+  box.querySelectorAll('.el').forEach(row => {
+    const i = +row.dataset.i;
+    row.querySelectorAll('[data-k]').forEach(inp => inp.addEventListener('input', () => {
+      const k = inp.dataset.k;
+      if (k === 'type') els[i].type = inp.value;
+      else { const n = parseFloat(inp.value); els[i][k] = isFinite(n) ? n : null; }
+    }));
+    row.querySelector('.rm').onclick = () => { els.splice(i,1); renderEls(); };
+  });
+}
+$('eAddEl').onclick = () => { S.edit.elements.push({type:'Qatlamlanish', az:null, dip:null}); renderEls(); };
+
+function renderPhotos(){
+  const box = $('ePhotos');
+  box.innerHTML = (S.edit.photos||[]).map((id,i) => `<div class="ph"><img src="${blobUrl(id)}" alt="Nuqta fotosi ${i+1}"><button data-i="${i}" aria-label="Fotoni olib tashlash">×</button></div>`).join('');
+  box.querySelectorAll('button').forEach(b => b.onclick = () => { S.edit.photos.splice(+b.dataset.i,1); renderPhotos(); });
+  $('photoCtl').classList.toggle('hidden', !assets);
+  $('photoNo').classList.toggle('hidden', !!assets);
+}
+$('ePhotoBtn').onclick = () => $('ePhotoInput').click();
+$('ePhotoInput').onchange = async ev => {
+  const files = [...ev.target.files]; ev.target.value = '';
+  for (const f of files){
+    $('photoStatus').innerHTML = '<span class="spin"></span>Yuklanmoqda…';
+    try { const r = await assets.upload(f); if (S.edit){ S.edit.photos.push(r.id); renderPhotos(); } $('photoStatus').textContent = ''; }
+    catch (e) { $('photoStatus').textContent = 'Foto yuklanmadi.'; break; }
+  }
+};
+
+function collect(){
+  const e = S.edit;
+  e.name = $('eName').value.trim(); e.date = $('eDate').value; e.route = $('eRoute').value.trim();
+  const c = parseCoord($('eCoord').value);
+  if (c){ e.lat = c.lat; e.lon = c.lon; } else { delete e.lat; delete e.lon; }
+  const a = parseFloat($('eAlt').value.replace(',','.')); if (isFinite(a)) e.alt = a; else delete e.alt;
+  e.rock = $('eRock').value.trim(); e.description = $('eDesc').value; e.samples = $('eSamples').value.trim();
+  e.flag = $('eFlag').checked; e.flagNote = $('eFlagNote').value.trim();
+  e.elements = (e.elements||[]).filter(x => x.az != null || x.dip != null);
+  return e;
+}
+$('mSave').onclick = async () => {
+  const e = collect();
+  if (!e.name){ $('mMsg').textContent = 'Nuqta nomini kiriting.'; $('eName').focus(); return; }
+  if ($('eCoord').value.trim() && !hasCoord(e)){ $('mMsg').textContent = 'Koordinata noto‘g‘ri.'; $('eCoord').focus(); return; }
+  const dup = S.points.find(p => p.name.toLowerCase() === e.name.toLowerCase() && p._id !== S.editId);
+  if (dup && !$('mSave').dataset.dupOk){ $('mMsg').textContent = `«${e.name}» allaqachon bor. Baribir saqlash uchun yana bosing.`; $('mSave').dataset.dupOk = '1'; return; }
+  delete $('mSave').dataset.dupOk;
+  const id = S.editId || ('p-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6));
+  stopGeo();
+  const body = { ...e }; delete body._id; delete body._token;
+  if (geoBest && hasCoord(body) && Math.abs(geoBest.lat - body.lat) < 1e-6 && Math.abs(geoBest.lon - body.lon) < 1e-6) body.gpsAcc = Math.round(geoBest.acc);
+  body.updatedAt = new Date().toISOString(); if (!body.createdAt) body.createdAt = body.updatedAt;
+  $('mSave').disabled = true; $('mMsg').innerHTML = '<span class="spin"></span>Saqlanmoqda…';
+  try { await savePoint(id, body); closeEditor(); setStatus('Saqlandi ✓ ' + body.name); }
+  catch (err){ $('mMsg').textContent = errText(err); }
+  finally { $('mSave').disabled = false; }
+};
+$('mDelete').onclick = async () => {
+  if (!delArmed){ delArmed = true; $('mDelete').textContent = 'Rostdan o‘chirilsinmi? Ha'; return; }
+  try { const name = S.edit.name; await deletePoint(S.editId); closeEditor(); setStatus('O‘chirildi: ' + name); }
+  catch (err){ $('mMsg').textContent = errText(err); }
+};
+$('mCancel').onclick = closeEditor; $('mClose').onclick = closeEditor;
+$('overlay').addEventListener('click', ev => { if (ev.target === $('overlay')) closeEditor(); });
+document.addEventListener('keydown', ev => {
+  if (ev.key !== 'Escape') return;
+  if (!$('gOverlay').classList.contains('hidden')) closeGeoref();
+  else if (!$('overlay').classList.contains('hidden')) closeEditor();
+});
+
+/* ---------------- AI description ---------------- */
+function aiPrompt(e, lang){
+  const L = lang === 'ru' ? 'Russian' : 'Uzbek (Latin script, with o‘ and g‘)';
+  const facts = [
+    `Point name: ${e.name || '—'}`, e.date && `Date: ${e.date}`, e.route && `Route: ${e.route}`,
+    hasCoord(e) && `Coordinates (WGS-84): ${coordText(e,'dm')}`, typeof e.alt === 'number' && `Altitude: ${e.alt} m`,
+    e.rock && `Rock: ${e.rock}`,
+    (e.elements||[]).length && `Attitude measurements (dip azimuth / dip angle): ${e.elements.map(elText).join('; ')}`,
+    e.samples && `Samples taken: ${e.samples}`,
+    e.description && `Geologist's rough notes: """${e.description.slice(0,4000)}"""`
+  ].filter(Boolean).join('\n');
+  return `You are an experienced field geologist writing the official description (in Russian "описание точки наблюдения", in Uzbek "kuzatuv nuqtasi apisaniyasi") for a field notebook (pikitashka).
+
+Facts recorded at this observation point:
+${facts}
+
+Write a clear, well-structured description in ${L}, in the formal style of geological field reports, using only the facts above. Do not invent rock types, minerals, measurements, distances or landmarks that are not given. Where an important item is missing, insert a short placeholder in square brackets, e.g. [geomorfologik holati], so the geologist can fill it in. Suggested order: location and exposure, rocks and their characteristics, attitude elements, contacts and structures, alteration and mineralization, samples taken. Plain text only, no Markdown, 1–3 short paragraphs.`;
+}
+$('aiBtn').onclick = async () => {
+  if (!sample) return;
+  const e = collect();
+  if (!e.name && !e.rock && !e.description.trim()){ $('aiStatus').textContent = 'Avval kamida jins nomi yoki qisqa izoh yozing.'; return; }
+  aiCtl = new AbortController();
+  const before = $('eDesc').value;
+  $('aiBtn').disabled = true; $('aiStop').classList.remove('hidden');
+  $('aiStatus').innerHTML = '<span class="spin"></span>Yozilmoqda…';
+  try {
+    const r = await sample(aiPrompt(e, $('aiLang').value), { signal: aiCtl.signal, cache: false,
+      onText: ({text}) => { $('eDesc').value = text; } });
+    $('eDesc').value = r.text.trim();
+    $('aiStatus').textContent = 'Tayyor. Tekshirib, [qavs] ichidagilarni to‘ldiring.';
+    if (before.trim()) $('aiStatus').textContent += ' Eski matningiz AI’ga asos sifatida berildi.';
+  } catch (err) {
+    if (err && err.code === 'cancelled'){ $('eDesc').value = err.text || before; $('aiStatus').textContent = 'To‘xtatildi.'; }
+    else {
+      $('eDesc').value = before;
+      const M = { not_granted:'Ruxsat berilmadi.', rate_limited:'Limit tugadi, birozdan keyin urinib ko‘ring.', sampling_disabled:'AI bu hisobda mavjud emas.' };
+      $('aiStatus').textContent = M[err && err.code] || 'Xatolik. Qayta urinib ko‘ring.';
+      if (err && (err.code === 'not_granted' || err.code === 'sampling_disabled')) $('aiRow').classList.add('hidden');
+    }
+  } finally { $('aiBtn').disabled = false; $('aiStop').classList.add('hidden'); aiCtl = null; }
+};
+$('aiStop').onclick = () => aiCtl && aiCtl.abort();
+
+/* ---------------- storage ---------------- */
+const LS_KEY = 'pikitashka.points.v1';
+function lsLoad(){ try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; } }
+function lsSave(){ try { localStorage.setItem(LS_KEY, JSON.stringify(S.points)); } catch {} }
+async function savePoint(id, body){
+  if (mode === 'db'){ await coll.doc(id).set(body); return; }
+  const i = S.points.findIndex(p => p._id === id);
+  const rec = { ...body, _id: id };
+  if (i >= 0) S.points[i] = rec; else S.points.push(rec);
+  lsSave(); render();
+}
+async function deletePoint(id){
+  if (mode === 'db'){ await coll.doc(id).delete(); return; }
+  S.points = S.points.filter(p => p._id !== id); lsSave(); render();
+}
+function errText(e){
+  const c = e && e.code;
+  if (c === 'quota_exceeded') return 'Xotira to‘lgan. Keraksiz nuqtalarni o‘chiring.';
+  if (c === 'invalid_argument') return 'Saqlashga ruxsat yo‘q yoki ma’lumot juda katta.';
+  if (c === 'revoked') return 'Kirish huquqi o‘zgardi. Sahifani qayta oching.';
+  return 'Saqlab bo‘lmadi. Qayta urinib ko‘ring.';
+}
+
+/* ---------------- export ---------------- */
+function csv(sep){
+  const head = ['Nuqta','Sana','Marshrut','Kenglik','Uzunlik','Koordinata (WGS-84)','Balandlik, m','Jins','Yotish elementlari','Namunalar','Tavsif','Tekshirish','Izoh'];
+  const q = v => { const s = String(v ?? ''); return /[";\n,]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+  const rows = filtered().map(p => [p.name, p.date, p.route, hasCoord(p)?p.lat.toFixed(6):'', hasCoord(p)?p.lon.toFixed(6):'',
+    hasCoord(p)?coordText(p,'dm'):'', p.alt ?? '', p.rock, (p.elements||[]).map(elText).join('; '), p.samples, p.description, p.flag?'ha':'', p.flagNote]);
+  return [head, ...rows].map(r => r.map(q).join(sep)).join('\r\n');
+}
+function xmlEsc(s){ return String(s ?? '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+function kml(){
+  const pms = filtered().filter(hasCoord).map(p => {
+    const d = [p.rock && 'Jins: '+p.rock, (p.elements||[]).length && 'Elementlar: '+p.elements.map(elText).join('; '), p.samples && 'Namunalar: '+p.samples, p.description, p.flag && '⚠ '+(p.flagNote||'Tekshirish kerak')].filter(Boolean).join('\n');
+    return `  <Placemark><name>${xmlEsc(p.name)}</name><styleUrl>#${p.flag?'w':'n'}</styleUrl><description>${xmlEsc(d)}</description><Point><coordinates>${p.lon},${p.lat}${typeof p.alt==='number'?','+p.alt:''}</coordinates></Point></Placemark>`;
+  }).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Pikitashka</name>\n<Style id="n"><IconStyle><color>ff3f5e2c</color></IconStyle></Style><Style id="w"><IconStyle><color>ff1e54b4</color></IconStyle></Style>\n${pms}\n</Document></kml>\n`;
+}
+function gpx(){
+  const w = filtered().filter(hasCoord).map(p => `  <wpt lat="${p.lat}" lon="${p.lon}">${typeof p.alt==='number'?`<ele>${p.alt}</ele>`:''}<name>${xmlEsc(p.name)}</name><desc>${xmlEsc([p.rock,p.samples].filter(Boolean).join(' | '))}</desc></wpt>`).join('\n');
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Pikitashka" xmlns="http://www.topografix.com/GPX/1/1">\n${w}\n</gpx>\n`;
+}
+const CRC = (() => { const t = new Uint32Array(256); for (let n=0;n<256;n++){ let c=n; for (let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(b){ let c = 0xFFFFFFFF; for (let i=0;i<b.length;i++) c = CRC[(c^b[i])&0xFF]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function makeZip(files){
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  for (const f of files){
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(6,0x0800,true); h.setUint16(8,0,true);
+    h.setUint16(10,0,true); h.setUint16(12,0x21,true); h.setUint32(14,crc,true); h.setUint32(18,data.length,true); h.setUint32(22,data.length,true);
+    h.setUint16(26,name.length,true); h.setUint16(28,0,true);
+    parts.push(new Uint8Array(h.buffer), name, data);
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(8,0x0800,true); c.setUint16(10,0,true);
+    c.setUint16(12,0,true); c.setUint16(14,0x21,true); c.setUint32(16,crc,true); c.setUint32(20,data.length,true); c.setUint32(24,data.length,true);
+    c.setUint16(28,name.length,true); c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer), name);
+    off += 30 + name.length + data.length;
+  }
+  const cSize = central.reduce((n,a) => n + a.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,cSize,true); e.setUint32(16,off,true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)]);
+}
+async function offer(filename, data){
+  if (!filtered().length){ setStatus('Eksport uchun nuqta yo‘q.', true); return; }
+  if (!downloads){ setStatus('Fayl yuklab olish bu ko‘rinishda mavjud emas.', true); return; }
+  try { await downloads.save({ filename, data }); setStatus('Fayl tayyor: ' + filename); }
+  catch (e) { if (!e || e.code !== 'declined') setStatus('Faylni saqlab bo‘lmadi.', true); }
+}
+const stamp = () => todayStr() + (S.group === 'all' ? '' : '_' + S.group);
+$('expCsv').onclick = () => offer(`pikitashka_${stamp()}.csv`, '﻿' + csv(';'));
+$('expGis').onclick = () => offer(`pikitashka_${stamp()}_GIS.zip`, makeZip([
+  { name: 'pikitashka.kml', data: kml() }, { name: 'pikitashka.gpx', data: gpx() }, { name: 'pikitashka.csv', data: '﻿' + csv(',') }
+]));
+
+/* ---------------- controls ---------------- */
+$('addBtn').onclick = () => openEditor(null);
+$('search').addEventListener('input', e => { S.q = e.target.value; render(); });
+function setView(v){ S.view = v; $('vList').setAttribute('aria-pressed', v==='list'); $('vMap').setAttribute('aria-pressed', v==='map');
+  $('listView').classList.toggle('hidden', v!=='list'); $('mapView').classList.toggle('hidden', v!=='map');
+  if (v === 'map') mapKey = ''; else setPick(false);
+  render(); }
+$('vList').onclick = () => setView('list'); $('vMap').onclick = () => setView('map');
+function setFmt(f){ S.fmt = f; $('fDM').setAttribute('aria-pressed', f==='dm'); $('fDD').setAttribute('aria-pressed', f==='dd'); render(); }
+$('fDM').onclick = () => setFmt('dm'); $('fDD').onclick = () => setFmt('dd');
+
+
+/* ================= STANDALONE (telefon) ================= */
+const SEED = [];
+const BM_KEY = 'pikitashka.basemaps.v1';
+/* IndexedDB for photos & maps */
+const idb = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => { const r = indexedDB.open('pikitashka', 1); r.onupgradeneeded = () => r.result.createObjectStore('blobs'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }));
+  const tx = async (mode, fn) => { const d = await open(); return new Promise((res, rej) => { const t = d.transaction('blobs', mode); const st = t.objectStore('blobs'); const r = fn(st); t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error); }); };
+  return { put: (k, v) => tx('readwrite', s => s.put(v, k)), get: k => tx('readonly', s => s.get(k)), del: k => tx('readwrite', s => s.delete(k)), keys: () => tx('readonly', s => s.getAllKeys()) };
+})();
+const URLS = new Map();
+function blobUrl(id){ return URLS.get(id) || ''; }
+async function loadBlobs(){
+  try { const keys = await idb.keys() || []; for (const k of keys){ if (!URLS.has(k)){ const b = await idb.get(k); if (b) URLS.set(k, URL.createObjectURL(b)); } } } catch {}
+}
+assets = {
+  upload: async f => { const id = 'b-' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); await idb.put(id, f); URLS.set(id, URL.createObjectURL(f)); return { id }; },
+  delete: async id => { await idb.del(id); URLS.delete(id); }
+};
+downloads = {
+  save: async ({ filename, data }) => {
+    const blob = data instanceof Blob ? data : new Blob([data], { type: filename.endsWith('.csv') ? 'text/csv;charset=utf-8' : 'application/octet-stream' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    return { status: 'saved' };
+  }
+};
+function bmLoad(){ try { return JSON.parse(localStorage.getItem(BM_KEY) || '[]'); } catch { return []; } }
+function bmSave(){ try { localStorage.setItem(BM_KEY, JSON.stringify(S.basemaps)); } catch {} }
+bmColl = { doc: id => ({
+  set: async body => { const i = S.basemaps.findIndex(b => b._id === id); const rec = { ...body, _id: id }; if (i >= 0) S.basemaps[i] = rec; else S.basemaps.push(rec); bmSave(); render(); },
+  delete: async () => { S.basemaps = S.basemaps.filter(b => b._id !== id); bmSave(); render(); }
+}) };
+
+/* GPS */
+let geoWatch = null, geoBest = null, geoTimer = null;
+function stopGeo(){
+  if (geoWatch !== null && navigator.geolocation) navigator.geolocation.clearWatch(geoWatch);
+  geoWatch = null; clearTimeout(geoTimer);
+  const b = $('eGeoBtn'); if (b) b.textContent = '📍 Mening joylashuvim';
+}
+function startGeo(){
+  const msg = $('eGeoMsg');
+  if (!('geolocation' in navigator)){ msg.textContent = 'Bu brauzerda GPS yo‘q.'; return; }
+  if (window.isSecureContext === false){ msg.textContent = 'Brauzer bu fayl uchun GPS’ni bermayapti. Faylni Chrome’da oching yoki «📷 Kamera / 🖼 Galereyadan» foydalaning.'; return; }
+  stopGeo(); geoBest = null;
+  $('eGeoBtn').textContent = '⏹ To‘xtatish';
+  msg.innerHTML = '<span class="spin"></span>GPS qidirilmoqda… (ochiq joyda 10–30 soniya)';
+  geoWatch = navigator.geolocation.watchPosition(pos => {
+    if (!S.edit) return stopGeo();
+    const c = pos.coords;
+    if (!geoBest || c.accuracy < geoBest.acc){
+      geoBest = { lat: +c.latitude.toFixed(6), lon: +c.longitude.toFixed(6), alt: c.altitude, acc: c.accuracy };
+      $('eCoord').value = `${fmtDM(geoBest.lat, true)}, ${fmtDM(geoBest.lon, false)}`; updateParsed();
+      if (typeof c.altitude === 'number' && isFinite(c.altitude)) $('eAlt').value = Math.round(c.altitude);
+    }
+    const altTxt = typeof geoBest.alt === 'number' && isFinite(geoBest.alt) ? ` · balandlik ${Math.round(geoBest.alt)} m` : ' · balandlik kelmadi';
+    const done = geoBest.acc <= 5;
+    msg.innerHTML = (done ? '✓ ' : '<span class="spin"></span>') + `Aniqlik ±${Math.round(geoBest.acc)} m${altTxt}` + (done ? '' : ' — aniqlashtirilmoqda, xohlasangiz hoziroq saqlang');
+    if (done) stopGeo();
+  }, err => {
+    stopGeo();
+    msg.textContent = err.code === 1 ? 'Joylashuvga ruxsat berilmadi. Brauzer sozlamalarida bu sahifa uchun «Joylashuv»ni yoqing va qayta bosing.'
+      : err.code === 3 ? 'GPS signali topilmadi. Ochiq joyga chiqib, qayta bosing.' : 'GPS ishlamayapti. Telefonda joylashuv (GPS) yoqilganini tekshiring.';
+  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 60000 });
+  geoTimer = setTimeout(() => { if (geoWatch !== null){ stopGeo(); if (geoBest) msg.textContent = `✓ Aniqlik ±${Math.round(geoBest.acc)} m (eng yaxshi natija)`; } }, 60000);
+}
+$('eGeoBtn').onclick = () => { if (geoWatch !== null){ stopGeo(); if (geoBest) $('eGeoMsg').textContent = `✓ Aniqlik ±${Math.round(geoBest.acc)} m`; } else startGeo(); };
+
+/* backup / import */
+$('backupBtn').onclick = () => {
+  const data = JSON.stringify({ app: 'pikitashka', version: 1, exportedAt: new Date().toISOString(), points: S.points, basemaps: S.basemaps.map(({ assetId, ...b }) => b) }, null, 1);
+  downloads.save({ filename: `pikitashka_zaxira_${todayStr()}.json`, data });
+  setStatus('Zaxira fayli saqlandi. Uni Claude’ga yuborsangiz, asosiy Pikitashka’ga qo‘shib beraman.');
+};
+$('importBtn').onclick = () => $('importInput').click();
+$('importInput').onchange = async ev => {
+  const f = ev.target.files[0]; ev.target.value = ''; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    const pts = Array.isArray(d) ? d : d.points;
+    if (!Array.isArray(pts)) throw 0;
+    let added = 0, updated = 0;
+    for (const p of pts){
+      if (!p || !p.name) continue;
+      const id = p._id || ('p-' + String(p.name).toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+      const i = S.points.findIndex(x => x._id === id);
+      const rec = { elements: [], photos: [], ...p, _id: id };
+      if (i >= 0){ if (String(rec.updatedAt || '') >= String(S.points[i].updatedAt || '')){ S.points[i] = { ...rec, photos: S.points[i].photos || [] }; updated++; } }
+      else { S.points.push(rec); added++; }
+    }
+    lsSave(); render(); setStatus(`Zaxiradan: ${added} ta yangi, ${updated} ta yangilangan nuqta.`);
+  } catch { setStatus('Bu fayl Pikitashka zaxirasi emas.', true); }
+};
+
+/* install (PWA) */
+(() => {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  let dismissed = false; try { dismissed = localStorage.getItem('pikitashka.installDismissed') === '1'; } catch {}
+  const show = () => { if (!standalone && !dismissed) $('installBanner').classList.remove('hidden'); };
+  let deferred = null;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; $('installBtn').classList.remove('hidden'); $('installHint').textContent = ''; show(); });
+  $('installBtn').onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice.catch(() => {}); deferred = null; $('installBanner').classList.add('hidden'); };
+  $('installClose').onclick = () => { $('installBanner').classList.add('hidden'); try { localStorage.setItem('pikitashka.installDismissed', '1'); } catch {} };
+  addEventListener('appinstalled', () => $('installBanner').classList.add('hidden'));
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (ios){ $('installHint').innerHTML = 'Safari’da pastdagi <b>Ulashish ⬆</b> tugmasini bosing → <b>«Bosh ekranga qo‘shish»</b>.'; show(); }
+  else setTimeout(() => { if (!deferred){ $('installHint').innerHTML = 'Chrome menyusi <b>⋮</b> → <b>«Ilovani o‘rnatish»</b> yoki «Bosh ekranga qo‘shish».'; show(); } }, 3000);
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+
+/* boot */
+(async () => {
+  mode = 'local';
+  let pts = lsLoad();
+  if (!pts.length && !localStorage.getItem(LS_KEY + '.seeded')){ pts = SEED; S.points = pts; lsSave(); try { localStorage.setItem(LS_KEY + '.seeded', '1'); } catch {} }
+  S.points = pts; S.basemaps = bmLoad();
+  await loadBlobs();
+  setStatus(`${S.points.length} ta nuqta · telefonda saqlangan`);
+  render();
+})();
+
+</script>
+</body>
+</html>
